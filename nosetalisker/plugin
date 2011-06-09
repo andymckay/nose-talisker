@@ -1,0 +1,154 @@
+from datetime import datetime
+
+import cProfile
+import logging
+import os
+import tempfile
+
+from nose.plugins import Plugin
+
+log = logging.getLogger('nose.plugins.talisker')
+
+print
+print
+print
+print "importy"
+print
+print
+
+class Talisker(Plugin):
+    """
+    Outputs a profile for each test into a profile directory
+    using Python's standard profile modules.
+    """
+    name = 'talisker'
+
+    def options(self, parser, env):
+        """Register commandline options."""
+        Plugin.options(self, parser, env)
+        parser.add_option('--prof-path', action='store', dest='profile_path',
+                          default=tempfile.mkdtemp(),
+                          help="The directory to write profile files too.")
+
+    def begin(self):
+        """Create profile stats file and load profiler.
+        """
+        self.prof = cProfile.Profile()
+
+    def configure(self, options, conf):
+        """Configure plugin.
+        """
+        Plugin.configure(self, options, conf)
+        self.conf = conf
+
+    def prepareTest(self, test):
+        """Wrap entire test run in :func:`prof.runcall`.
+        """
+        def run_and_profile(result, prof=self.prof, test=test):
+            import pdb; pdb.set_trace()
+            start = datetime.now()
+            prof.runcall(test, result)
+            elap = datetime.now() - start
+            elapms = elap.seconds * 1000.0 + elap.microseconds / 1000.0
+            profname2 = "%s.%06dms.%s.prof" % (path_name, elapms, datetime.now().isoformat())
+            profname2 = os.path.join(prof_path, profname2)
+            os.rename(profname, profname2)
+        return run_and_profile
+
+    def report(self, stream):
+        """Output profiler report.
+        """
+        log.debug('printing profiler report')
+        self.prof.close()
+        prof_stats = stats.load(self.pfile)
+        prof_stats.sort_stats(self.sort)
+
+        # 2.5 has completely different stream handling from 2.4 and earlier.
+        # Before 2.5, stats objects have no stream attribute; in 2.5 and later
+        # a reference sys.stdout is stored before we can tweak it.
+        compat_25 = hasattr(prof_stats, 'stream')
+        if compat_25:
+            tmp = prof_stats.stream
+            prof_stats.stream = stream
+        else:
+            tmp = sys.stdout
+            sys.stdout = stream
+        try:
+            if self.restrict:
+                log.debug('setting profiler restriction to %s', self.restrict)
+                prof_stats.print_stats(*self.restrict)
+            else:
+                prof_stats.print_stats()
+        finally:
+            if compat_25:
+                prof_stats.stream = tmp
+            else:
+                sys.stdout = tmp
+
+    def finalize(self, result):
+        """Clean up stats file, if configured to do so.
+        """
+        if not self.available():
+            return
+        try:
+            self.prof.close()
+        except AttributeError:
+            # TODO: is this trying to catch just the case where not
+            # hasattr(self.prof, "close")?  If so, the function call should be
+            # moved out of the try: suite.
+            pass
+        if self.clean_stats_file:
+            if self.fileno:
+                try:
+                    os.close(self.fileno)
+                except OSError:
+                    pass
+            try:
+                os.unlink(self.pfile)
+            except OSError:
+                pass
+        return None
+
+    def _create_pfile(self):
+        if not self.pfile:
+            self.fileno, self.pfile = tempfile.mkstemp()
+            self.clean_stats_file = True
+
+class Talisker(Plugin):
+    """Prints nicer dots grouped by class/module."""
+    name = 'talisker'
+
+    def options(self, parser, env=os.environ):
+        super(Talisker, self).options(parser, env=env)
+        self.parser = parser
+
+    def configure(self, options, conf):
+        super(Talisker, self).configure(options, conf)
+        if not self.enabled:
+            return
+        self.cmd_options = options
+        self.config = conf
+
+    def prepareTestResult(self, result):
+        print result
+        return result
+
+    def prepareTestRunner(self, runner):
+        self.runner = runner
+
+
+def nice_path(path):
+    if path is None:
+        return path
+    path = os.path.abspath(path)
+    try:
+        wd = os.getcwd()
+    except OSError:
+        # I guess you did something stupid like delete the current directory.
+        pass
+    else:
+        if path.startswith(wd):
+            path = path.replace(wd, '')[1:] # shorten and remove slash
+    if path.endswith('.pyc'):
+        path = path[0:-1]
+    return path
