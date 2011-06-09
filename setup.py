@@ -1,8 +1,4 @@
-
-import sys
-
 from setuptools import setup, find_packages
-
 
 setup(
     name='nosetalisker',
@@ -21,10 +17,10 @@ setup(
         [nose.plugins.0.10]
         talisker = nosetalisker:Talisker
         ''',
-    classifiers = [
+    classifiers=[
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'Topic :: Software Development :: Testing'
+        'Topic :: Software Development :: Testing',
         ],
     )

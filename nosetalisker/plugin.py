@@ -1,23 +1,19 @@
 from datetime import datetime
 
+HAS_CPROFILE = True
 try:
     import cProfile
 except ImportError:
-    cProfile = None
+    HAS_CPROFILE = False
 
 import logging
 import os
 
-import inspect
-from inspect import isfunction
-
-import unittest
 import tempfile
-
-from nose.case import Test, FunctionTestCase
 from nose.plugins import Plugin
 
 log = logging.getLogger('nose.plugins.talisker')
+
 
 class Talisker(Plugin):
     """
@@ -37,7 +33,7 @@ class Talisker(Plugin):
                           help="The directory to write profile files too.")
 
     def configure(self, options, conf):
-        if not self.available():
+        if not HAS_CPROFILE:
             self.enabled = False
             return
 
