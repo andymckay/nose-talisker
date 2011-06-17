@@ -1,7 +1,7 @@
 Nose Talisker
 ==================
 
-A nose plugin that outputs one cProfile stat dump to a file per test.
+A nose plugin that outputs one cProfile stat dump to a file, for each test.
 
 Install
 -------------
@@ -29,7 +29,7 @@ Usage
 
     nosetests --with-talisker --prof-path=/tmp/output
 
-This module is designed to be used my talisker to consume and view the profile
+This module is designed to be used by talisker to consume and view the profile
 results. The format is deliberately based upon the runprofileserver from the
 command extensions module, with the same option naming.
 
