@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='nosetalisker',
-    version='0.1',
+    version='0.2',
     description='',
     long_description='',
     author='Andy McKay',
